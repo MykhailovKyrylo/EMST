@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="CircleInConvexHull:jar2">
+    <output-path>$PROJECT_DIR$/out/artifacts/CircleInConvexHull_jar2</output-path>
+    <root id="archive" name="CircleInConvexHull.jar">
+      <element id="module-output" name="CircleInConvexHull" />
+    </root>
+  </artifact>
+</component>
