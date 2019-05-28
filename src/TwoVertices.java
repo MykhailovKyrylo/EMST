@@ -43,10 +43,11 @@ public class TwoVertices {
     }
 
     public int getMin() {
-        if(this.outer1 == -1) return this.outer2;
-        if(this.outer2 == -1) return this.outer1;
-
-        return (this.outer1 > this.outer2) ? this.outer2 : this.outer1;
+        if(this.outer1 != -1 && this.outer2 != -1) {
+            return Math.min(this.outer1, this.outer2);
+        }
+        if(this.outer1 != -1) return this.outer1;
+        return this.outer2;
     }
 
     public int size() {

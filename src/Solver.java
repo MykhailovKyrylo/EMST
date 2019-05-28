@@ -1,11 +1,14 @@
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
+import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
 
 import java.util.*;
 
 public class Solver {
     public final Double eps = 1e-9;
-    private Vector<Line> shapeLines = new Vector<>();
+    private Vector<Line> triangulationLines = new Vector<>();
+    private Vector<Edge> graph = new Vector<>();
+    private Vector<Line> EMST = new Vector<>();
     private Vector<Circle> shapePoints = new Vector<>();
     private Vector<CVec2> points = new Vector<>();
     private Vector<Edge> recursionStack = new Vector<>();
@@ -14,16 +17,30 @@ public class Solver {
     public Solver() {
     }
 
-    public Vector<Line> getLines() {
-        return shapeLines;
+    public Vector<Line> getTriangulationLines() {
+        return triangulationLines;
+    }
+
+    public void pringTriangulation() {
+
+        Iterator it = this.triangulation.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry pair = (Map.Entry)it.next();
+            Edge edge = (Edge) pair.getKey();
+
+
+            System.out.println(edge.v1 + " " + edge.v2);
+
+        }
     }
 
     public void solve(Vector<Circle> circles_points) {
 
-        this.shapeLines.clear();
+        this.triangulationLines.clear();
         this.shapePoints = circles_points;
+        this.graph.clear();
 
-        this.points.clear();;
+        this.points.clear();
         this.recursionStack.clear();
         this.triangulation.clear();
 
@@ -33,7 +50,13 @@ public class Solver {
 
         Collections.sort(this.points, CVec2.cVec2Comparator);
 
-        this.recursionStack.setSize(this.points.size());
+        for(CVec2 point: this.points) {
+            System.out.println(point.x + " " + point.y);
+        }
+
+        for(int i = 0; i < this.points.size(); i++) {
+            this.recursionStack.add(new Edge());
+        }
 
         if( crossProduct(this.points.get(1).minus( this.points.get(0)), this.points.get(2).minus( this.points.get(0) )) < 0.0 ) {
             this.points.get(0).left = 2;
@@ -55,6 +78,8 @@ public class Solver {
         insert(new Edge(0, 1), 2);
         insert(new Edge(0, 2), 1);
 
+        pringTriangulation();
+
         for( int i = 3; i < this.points.size(); i++) {
             int currentPt = i - 1;
             while( crossProduct( this.points.get(currentPt).minus( this.points.get(i) ), this.points.get(this.points.get(currentPt).right).minus( this.points.get(i) ) ) > -eps ) {
@@ -73,6 +98,7 @@ public class Solver {
 
             this.points.get(this.points.get(i).right).left = i;
             this.points.get(currentPt).right = i;
+
         }
 
         HashSet<Integer> convexHull = new HashSet<>();
@@ -83,15 +109,26 @@ public class Solver {
             convexHull.add( hullPoint );
         }
 
+        HashSet<Edge> triangulationEdges = new HashSet<>();
+        triangulationEdges.clear();
+
         Iterator it = this.triangulation.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry pair = (Map.Entry)it.next();
             Edge edge = (Edge) pair.getKey();
+            TwoVertices twoVertices = (TwoVertices) pair.getValue();
 
-            this.shapeLines.add(new Line( this.points.get(edge.v1).x, this.points.get(edge.v1).y, this.points.get(edge.v2).x, this.points.get(edge.v2).y));
+            this.graph.add( edge );
 
-            it.remove();
+            System.out.println("Edge " + edge.v1 + " " + edge.v2);
+            System.out.println("twoVertices " + twoVertices.outer1 + " " + twoVertices.outer2);
+            System.out.println("\n");
+
+            this.triangulationLines.add(new Line( this.points.get(edge.v1).x, this.points.get(edge.v1).y, this.points.get(edge.v2).x, this.points.get(edge.v2).y));
+
         }
+
+
     }
 
     public void restructure( int left, int right, int cur) {
@@ -120,7 +157,7 @@ public class Solver {
             insert( new Edge( Math.min( innerPt, left ), Math.max( innerPt, left ) ),  cur );
             erase( new Edge( Math.min( innerPt, right ), Math.max( innerPt, right ) ),  left );
             insert( new Edge( Math.min( innerPt, right ), Math.max( innerPt, right ) ),  cur );
-            triangulation.remove(new Edge( Math.min( left, right ), Math.max( left, right ) ));
+            this.triangulation.remove(new Edge( Math.min( left, right ), Math.max( left, right ) ));
 
             this.recursionStack.set(stackSize++, new Edge(left, innerPt));
             this.recursionStack.set(stackSize++, new Edge(innerPt, right ));
@@ -174,7 +211,7 @@ public class Solver {
         }
     }
 
-    public Double crossProduct( final CVec2 a, final CVec2 b) {
-        return a.x * b.y - a.y * a.x;
+    public double crossProduct( final CVec2 a, final CVec2 b) {
+        return (double) (a.x * b.y - a.y * b.x);
     }
 }

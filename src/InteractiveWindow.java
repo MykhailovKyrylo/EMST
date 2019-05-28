@@ -110,7 +110,7 @@ public class InteractiveWindow {
             for (Line line: lines)
                 group.getChildren().remove(line);
 
-            for (Line line: solver.getLines()) {
+            for (Line line: solver.getTriangulationLines()) {
                 group.getChildren().add(line);
             }
 
