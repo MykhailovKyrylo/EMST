@@ -1,13 +1,14 @@
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
-import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
 
 import java.util.*;
 
 public class Solver {
-    public final Double eps = 1e-9;
+    public final double eps = 1e-9;
+    public final double inf =  1e9;
+
     private Vector<Line> triangulationLines = new Vector<>();
-    private Vector<Edge> graph = new Vector<>();
+    private Vector<Vector<GraphEdge> > graph = new Vector<>();
     private Vector<Line> EMST = new Vector<>();
     private Vector<Circle> shapePoints = new Vector<>();
     private Vector<CVec2> points = new Vector<>();
@@ -19,19 +20,6 @@ public class Solver {
 
     public Vector<Line> getTriangulationLines() {
         return triangulationLines;
-    }
-
-    public void pringTriangulation() {
-
-        Iterator it = this.triangulation.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry pair = (Map.Entry)it.next();
-            Edge edge = (Edge) pair.getKey();
-
-
-            System.out.println(edge.v1 + " " + edge.v2);
-
-        }
     }
 
     public void solve(Vector<Circle> circles_points) {
@@ -49,10 +37,6 @@ public class Solver {
         }
 
         Collections.sort(this.points, CVec2.cVec2Comparator);
-
-        for(CVec2 point: this.points) {
-            System.out.println(point.x + " " + point.y);
-        }
 
         for(int i = 0; i < this.points.size(); i++) {
             this.recursionStack.add(new Edge());
@@ -77,8 +61,6 @@ public class Solver {
         insert(new Edge(1, 2), 0);
         insert(new Edge(0, 1), 2);
         insert(new Edge(0, 2), 1);
-
-        pringTriangulation();
 
         for( int i = 3; i < this.points.size(); i++) {
             int currentPt = i - 1;
@@ -109,26 +91,76 @@ public class Solver {
             convexHull.add( hullPoint );
         }
 
-        HashSet<Edge> triangulationEdges = new HashSet<>();
-        triangulationEdges.clear();
+        for(int i = 0; i < this.points.size(); i++) {
+            this.graph.add(new Vector<>());
+        }
 
         Iterator it = this.triangulation.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry pair = (Map.Entry)it.next();
             Edge edge = (Edge) pair.getKey();
-            TwoVertices twoVertices = (TwoVertices) pair.getValue();
 
-            this.graph.add( edge );
+            this.graph.get(edge.v1).add(new GraphEdge(edge.v2, length(edge)));
 
-            System.out.println("Edge " + edge.v1 + " " + edge.v2);
-            System.out.println("twoVertices " + twoVertices.outer1 + " " + twoVertices.outer2);
-            System.out.println("\n");
-
-            this.triangulationLines.add(new Line( this.points.get(edge.v1).x, this.points.get(edge.v1).y, this.points.get(edge.v2).x, this.points.get(edge.v2).y));
+            this.triangulationLines.add(createLine(edge.v1, edge.v2));
 
         }
 
+        buildEMST();
+    }
 
+    public Line createLine(int a, int b) {
+        return new Line( this.points.get(a).x, this.points.get(a).y, this.points.get(b).x, this.points.get(b).y);
+    }
+
+    public Vector<Line> getEMST() {
+        return EMST;
+    }
+
+    public void buildEMST() {
+
+        int n = this.graph.size();
+
+        Vector<Double> min_e = new Vector<>();
+        Vector<Integer> sel_e = new Vector<>();
+
+        for(int i = 0; i < n; i++) {
+            min_e.add(inf);
+            sel_e.add(-1);
+        }
+
+        PriorityQueue<GraphEdge> q = new PriorityQueue<>();
+        q.clear();
+        min_e.set(0, 0.0);
+        q.add(new GraphEdge(0, 0.0));
+
+        for(int i = 0; i < n; i++) {
+            GraphEdge edge = q.poll();
+            int v = edge.to;
+
+            if(sel_e.get(v) != -1) {
+                this.EMST.add(createLine(v, sel_e.get(v)));
+            }
+
+            for(int j = 0; j < graph.get(v).size(); j++) {
+                int to = graph.get(v).get(j).to;
+                double length = graph.get(v).get(j).length;
+
+                if(length < min_e.get(to)) {
+                    q.remove(new GraphEdge(to, min_e.get(to)));
+                    min_e.set(to, length);
+                    sel_e.set(to, v);
+                    q.add(new GraphEdge(to, min_e.get(to)));
+                }
+            }
+        }
+
+
+    }
+
+    public double length(Edge edge) {
+
+        return Math.sqrt( Math.pow((this.points.get(edge.v1).x - this.points.get(edge.v2).x), 2) + Math.pow((this.points.get(edge.v1).y - this.points.get(edge.v2).y), 2) );
     }
 
     public void restructure( int left, int right, int cur) {

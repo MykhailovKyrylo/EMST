@@ -110,9 +110,19 @@ public class InteractiveWindow {
             for (Line line: lines)
                 group.getChildren().remove(line);
 
+            for (Line line: solver.getEMST()) {
+                line.setStroke(Color.RED);
+                line.setStrokeWidth(4);
+                group.getChildren().add(line);
+            }
+
             for (Line line: solver.getTriangulationLines()) {
                 group.getChildren().add(line);
             }
+
+            System.out.println("Size :" + solver.getEMST().size());
+
+
 
         });
 
