@@ -43,19 +43,19 @@ public class Solver {
         }
 
         if( crossProduct(this.points.get(1).minus( this.points.get(0)), this.points.get(2).minus( this.points.get(0) )) < 0.0 ) {
-            this.points.get(0).left = 2;
-            this.points.get(0).right = 1;
-            this.points.get(1).left = 0;
-            this.points.get(1).right = 2;
-            this.points.get(2).left = 1;
-            this.points.get(2).right = 0;
+            setLeft(0, 2);
+            setRight(0, 1);
+            setLeft(1, 0);
+            setRight(1, 2);
+            setLeft(2, 1);
+            setRight(2, 0);
         } else {
-            this.points.get(0).left = 1;
-            this.points.get(0).right = 2;
-            this.points.get(1).left = 2;
-            this.points.get(1).right = 0;
-            this.points.get(2).left = 0;
-            this.points.get(2).right = 1;
+            setLeft(0, 1);
+            setRight(0, 2);
+            setLeft(1, 2);
+            setRight(1, 0);
+            setLeft(2, 0);
+            setRight(2, 1);
         }
 
         insert(new Edge(1, 2), 0);
@@ -68,7 +68,7 @@ public class Solver {
                 restructure( currentPt, this.points.get(currentPt).right, i );
                 currentPt = this.points.get(currentPt).right;
             }
-            this.points.get(i).right = currentPt;
+            setRight(i, currentPt);
 
             currentPt = i - 1;
 
@@ -76,10 +76,10 @@ public class Solver {
                 restructure( this.points.get(currentPt).left, currentPt, i );
                 currentPt = this.points.get(currentPt).left;
             }
-            this.points.get(i).left = currentPt;
+            setLeft(i, currentPt);
 
-            this.points.get(this.points.get(i).right).left = i;
-            this.points.get(currentPt).right = i;
+            setLeft(this.points.get(i).right, i);
+            setRight(currentPt, i);
 
         }
 
@@ -101,12 +101,25 @@ public class Solver {
             Edge edge = (Edge) pair.getKey();
 
             this.graph.get(edge.v1).add(new GraphEdge(edge.v2, length(edge)));
+            this.graph.get(edge.v2).add(new GraphEdge(edge.v1, length(edge)));
 
             this.triangulationLines.add(createLine(edge.v1, edge.v2));
 
         }
 
         buildEMST();
+    }
+    
+    public void setRight(int i, int right) {
+        CVec2 point = this.points.get(i);
+        point.right = right;
+        this.points.set(i, point);
+    }
+
+    public void setLeft(int i, int left) {
+        CVec2 point = this.points.get(i);
+        point.left = left;
+        this.points.set(i, point);
     }
 
     public Line createLine(int a, int b) {
@@ -123,10 +136,12 @@ public class Solver {
 
         Vector<Double> min_e = new Vector<>();
         Vector<Integer> sel_e = new Vector<>();
+        Vector<Boolean> used = new Vector<>();
 
         for(int i = 0; i < n; i++) {
             min_e.add(inf);
             sel_e.add(-1);
+            used.add(false);
         }
 
         PriorityQueue<GraphEdge> q = new PriorityQueue<>();
@@ -138,7 +153,16 @@ public class Solver {
             GraphEdge edge = q.poll();
             int v = edge.to;
 
+            if(used.get(v)) {
+                i--;
+                continue;
+            }
+
+            used.set(v, true);
+
             if(sel_e.get(v) != -1) {
+                used.set(v, true);
+                used.set(sel_e.get(v), true);
                 this.EMST.add(createLine(v, sel_e.get(v)));
             }
 
@@ -153,9 +177,8 @@ public class Solver {
                     q.add(new GraphEdge(to, min_e.get(to)));
                 }
             }
+
         }
-
-
     }
 
     public double length(Edge edge) {
@@ -172,9 +195,9 @@ public class Solver {
             left = this.recursionStack.get(stackSize - 1).v1; right = this.recursionStack.get(stackSize - 1).v2;
             --stackSize;
 
-
-            int innerPt = triangulation.get(new Edge(Math.min( left, right), Math.max(left, right))).getMin();
-            if( check( left, right, cur, innerPt ) ) {
+            TwoVertices innerTwoVectives = this.triangulation.get(new Edge(Math.min( left, right), Math.max(left, right)));
+            int innerPt = innerTwoVectives.getMin();
+            if( innerPt != -1 && check( left, right, cur, innerPt ) ) {
                 insert( new Edge( right, cur ),  left );
                 insert( new Edge( left, cur ),  right );
                 insert( new Edge( Math.min( left, right ), Math.max( left, right ) ),  cur );
@@ -223,6 +246,7 @@ public class Solver {
     }
 
     public void insert( Edge key, int v) {
+        if(key.v1 > key.v2) key = new Edge(key.v2, key.v1);
         if(this.triangulation.containsKey(key)) {
             TwoVertices value = this.triangulation.get(key);
             value.insert(v);

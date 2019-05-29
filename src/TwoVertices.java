@@ -47,7 +47,8 @@ public class TwoVertices {
             return Math.min(this.outer1, this.outer2);
         }
         if(this.outer1 != -1) return this.outer1;
-        return this.outer2;
+        if(this.outer2 != -1) return this.outer2;
+        return -1;
     }
 
     public int size() {

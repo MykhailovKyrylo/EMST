@@ -115,9 +115,17 @@ public class StaticPointsWindow {
             for (Line line: lines)
                 group.getChildren().remove(line);
 
+            for (Line line: solver.getEMST()) {
+                line.setStroke(Color.RED);
+                line.setStrokeWidth(4);
+                group.getChildren().add(line);
+            }
+
             for (Line line: solver.getTriangulationLines()) {
                 group.getChildren().add(line);
             }
+
+            System.out.println(solver.getEMST().size());
 
         });
 
@@ -157,9 +165,11 @@ public class StaticPointsWindow {
             clear();
 
             for (int i = 0; i < pointsNumber; ++i){
-                double x = Math.random() * screenWidth;
-                double y = Math.random() * (screenHeight - 50);
+                double x = Math.round( Math.random() * screenWidth );
+                double y =  Math.round( Math.random() * ( screenHeight - 50) );
                 Circle circle = new Circle(x, y, 1);
+
+                System.out.println(x + " " + y);
 
                 points.add(circle);
                 group.getChildren().add(circle);

@@ -34,6 +34,6 @@ public class GraphEdge implements Comparable<GraphEdge>{
 
     @Override
     public int compareTo(GraphEdge o) {
-        return (int) ( (double) (this.length - o.length) );
+        return (int) ( (double) (this.length - o.length) * 1e9 );
     }
 }
